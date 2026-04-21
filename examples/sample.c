@@ -1,0 +1,8 @@
+int main() {
+    int x = 42;
+    if (x >= 10) {
+        return x;
+    }
+
+    return 0;
+}
