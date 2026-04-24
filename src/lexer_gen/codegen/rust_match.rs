@@ -1,4 +1,9 @@
 //! Gera codigo Rust do DFA em formato `match state { ... }`.
+//!
+//! Esta é a última fase teórica (Scanner Codificado Diretamente).
+//! O DFA não é interpretado por uma tabela em memória (como seria com Tabela 2D de Estado x Char).
+//! Em vez disso, geramos código Rust explícito: `match state { 0 => if ch == 'a' { Some(1) } ... }`.
+//! O compilador do Rust (LLVM) vai otimizar esse `match` gigante para algo super rápido.
 
 use std::fmt::Write as _;
 use std::path::Path;
@@ -12,6 +17,7 @@ use crate::scanner::RuleKind;
 pub fn generate_rust_match_scanner(dfa: &Dfa, spec: &UnifiedRegexSpec) -> Result<String, String> {
     validate_accept_indices(dfa, spec)?;
 
+    // Usamos um buffer String para ir escrevendo (append) o código fonte gerado.
     let mut out = String::new();
     write_header(&mut out);
     write_accept_table(&mut out, dfa, spec);
@@ -27,10 +33,12 @@ pub fn write_generated_scanner_to(
     spec: &UnifiedRegexSpec,
 ) -> Result<(), String> {
     let source = generate_rust_match_scanner(dfa, spec)?;
-    std::fs::write(output_path, source).map_err(|err| format!("failed writing generated scanner: {err}"))
+    std::fs::write(output_path, source)
+        .map_err(|err| format!("failed writing generated scanner: {err}"))
 }
 
-/// Gera um modulo com tabelas auxiliares do DFA minimizado.
+/// Gera um modulo auxiliar com tabelas puras (constantes) do DFA minimizado.
+/// Usado para debugar ou validar estados caso queira montar um scanner interpretado no futuro.
 pub fn generate_dfa_table_module(dfa: &Dfa, spec: &UnifiedRegexSpec) -> Result<String, String> {
     validate_accept_indices(dfa, spec)?;
 
@@ -55,6 +63,7 @@ pub fn generate_dfa_table_module(dfa: &Dfa, spec: &UnifiedRegexSpec) -> Result<S
     Ok(out)
 }
 
+/// Validação de segurança: Garante que o DFA não está pedindo uma regra que não existe.
 fn validate_accept_indices(dfa: &Dfa, spec: &UnifiedRegexSpec) -> Result<(), String> {
     let max = spec.rules.len();
     for (idx, state) in dfa.states.iter().enumerate() {
@@ -70,8 +79,12 @@ fn validate_accept_indices(dfa: &Dfa, spec: &UnifiedRegexSpec) -> Result<(), Str
 }
 
 fn write_header(out: &mut String) {
+    // Boilerplate e imports do Rust.
     out.push_str("// This file is generated. Do not edit by hand.\n");
     out.push_str("use crate::scanner::tokens::TokenKind;\n\n");
+    
+    // O Enum de Aceitação gerado. Se o estado quer Emitir um Token (guardando qual token),
+    // ou se quer só Skipar (espaço, comentário).
     out.push_str("#[derive(Debug, Clone, Copy, PartialEq, Eq)]\n");
     out.push_str("pub enum GeneratedAcceptAction {\n");
     out.push_str("    Emit(TokenKind),\n");
@@ -80,11 +93,13 @@ fn write_header(out: &mut String) {
 }
 
 fn write_accept_table(out: &mut String, dfa: &Dfa, spec: &UnifiedRegexSpec) {
+    // Cria uma função Rust gerada dinamicamente pra dizer se um estado X é de aceitação ou não.
     out.push_str("pub fn dfa_accept_action(state: usize) -> Option<GeneratedAcceptAction> {\n");
     out.push_str("    match state {\n");
 
     for (state_idx, state) in dfa.states.iter().enumerate() {
         if let Some(rule_idx) = state.accept_rule_index {
+            // Vai no array global de regras e olha a categoria daquela regra (Emit vs Skip).
             let rule = &spec.rules[rule_idx].rule;
             match rule.kind {
                 RuleKind::Emit(token) => {
@@ -103,18 +118,23 @@ fn write_accept_table(out: &mut String, dfa: &Dfa, spec: &UnifiedRegexSpec) {
         }
     }
 
+    // Qualquer estado que não for citado cai no `_ => None` (não é estado de aceitação).
     out.push_str("        _ => None,\n");
     out.push_str("    }\n");
     out.push_str("}\n\n");
 }
 
 fn write_next_state_fn(out: &mut String, dfa: &Dfa) {
+    // A função principal e mais invocada do scanner inteiro!
     out.push_str("pub fn dfa_next_state(state: usize, ch: char) -> Option<usize> {\n");
     out.push_str("    match state {\n");
 
     for (state_idx, state) in dfa.states.iter().enumerate() {
         let _ = writeln!(out, "        {state_idx} => {{");
 
+        // Transforma o HashMap de transições numa lista ordenada.
+        // É essencial ordenar para o código gerado ser consistente, senão cada
+        // vez que gerarmos ele cria um "if/else" numa ordem diferente, quebrando o versionamento (Git).
         let mut transitions = state
             .transitions
             .iter()
@@ -123,16 +143,23 @@ fn write_next_state_fn(out: &mut String, dfa: &Dfa) {
         transitions.sort_by(|left, right| left.0.cmp(&right.0));
 
         if transitions.is_empty() {
+            // Estado sem saída (morto).
             out.push_str("            None\n");
         } else {
+            // Encadeamento gigante de if/else pra decidir qual a próxima transição a partir do Char `ch`.
             out.push_str("            ");
             for (i, (_, symbol, target)) in transitions.iter().enumerate() {
                 if i == 0 {
                     let _ = write!(out, "if {} {{ Some({target}) }}", symbol_predicate(symbol));
                 } else {
-                    let _ = write!(out, " else if {} {{ Some({target}) }}", symbol_predicate(symbol));
+                    let _ = write!(
+                        out,
+                        " else if {} {{ Some({target}) }}",
+                        symbol_predicate(symbol)
+                    );
                 }
             }
+            // Se nenhum dos caminhos serve, não há transição (retorna None).
             out.push_str(" else { None }\n");
         }
 
@@ -144,6 +171,7 @@ fn write_next_state_fn(out: &mut String, dfa: &Dfa) {
     out.push_str("}\n");
 }
 
+/// Cria um "Hash" textual do símbolo de transição pra gente poder ordenar alfabeticamente.
 fn symbol_key(symbol: &TransitionSymbol) -> String {
     match symbol {
         TransitionSymbol::Literal(ch) => format!("lit:{:08x}", *ch as u32),
@@ -152,10 +180,12 @@ fn symbol_key(symbol: &TransitionSymbol) -> String {
     }
 }
 
+/// A mágica que converte a AST de CharClass ou Literal do Rust num "código Rust real".
+/// Ex: Se for Literal('a'), devolve a string "ch == 'a'".
 fn symbol_predicate(symbol: &TransitionSymbol) -> String {
     match symbol {
         TransitionSymbol::Literal(ch) => format!("ch == {}", char_literal(*ch)),
-        TransitionSymbol::AnyChar => "true".to_string(),
+        TransitionSymbol::AnyChar => "true".to_string(), // Qualquer caracter aceita.
         TransitionSymbol::CharClass(class) => {
             let mut item_preds = Vec::<String>::new();
             for item in &class.items {
@@ -164,7 +194,12 @@ fn symbol_predicate(symbol: &TransitionSymbol) -> String {
                         item_preds.push(format!("ch == {}", char_literal(*ch)));
                     }
                     crate::lexer_gen::regex::CharClassItem::Range(start, end) => {
-                        item_preds.push(format!("({}..={}).contains(&ch)", char_literal(*start), char_literal(*end)));
+                        // Ex: ('a'..='z').contains(&ch)
+                        item_preds.push(format!(
+                            "({}..={}).contains(&ch)",
+                            char_literal(*start),
+                            char_literal(*end)
+                        ));
                     }
                 }
             }
@@ -184,6 +219,7 @@ fn symbol_predicate(symbol: &TransitionSymbol) -> String {
     }
 }
 
+/// Tratador de carácteres literais que sofrem com escape em código fonte (ex: '\n', '\t', etc).
 fn char_literal(ch: char) -> String {
     match ch {
         '\\' => "'\\\\'".to_string(),

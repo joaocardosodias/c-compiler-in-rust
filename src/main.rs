@@ -55,10 +55,7 @@ fn main() {
                 Err(err) => {
                     eprintln!(
                         "lex error: {:?} at {}:{} - {}",
-                        err.kind,
-                        err.span.start.line,
-                        err.span.start.column,
-                        err.message
+                        err.kind, err.span.start.line, err.span.start.column, err.message
                     );
                     std::process::exit(1);
                 }
