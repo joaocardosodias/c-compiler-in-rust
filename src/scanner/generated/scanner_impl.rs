@@ -1,4 +1,3 @@
-// This file is generated. Do not edit by hand.
 use crate::scanner::tokens::TokenKind;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

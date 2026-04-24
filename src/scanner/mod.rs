@@ -1,9 +1,3 @@
-//! Modulos relacionados ao scanner da linguagem C.
-//!
-//! O scanner final sera gerado a partir de regras em RE, mas os tipos de token
-//! e a especificacao das regras ficam aqui para servir de contrato entre o
-//! gerador e o restante do compilador.
-
 pub mod generated;
 pub mod runtime;
 pub mod spec;

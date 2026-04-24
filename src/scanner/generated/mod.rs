@@ -1,5 +1,3 @@
-//! Artefatos gerados para o scanner.
-
 pub mod dfa_table;
 pub mod scanner_impl;
 

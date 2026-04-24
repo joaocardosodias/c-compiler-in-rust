@@ -1,5 +1,3 @@
-// This file is generated. Do not edit by hand.
-
 pub const DFA_STATE_COUNT: usize = 101;
 pub const DFA_START_STATE: usize = 0;
 

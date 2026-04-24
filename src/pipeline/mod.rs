@@ -1,5 +1,3 @@
-//! Orquestracao de alto nivel do pipeline do scanner.
-
 pub mod steps;
 
 pub use steps::{

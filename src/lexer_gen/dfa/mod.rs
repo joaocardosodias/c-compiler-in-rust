@@ -1,5 +1,3 @@
-//! Representacao e construcao de AFD (DFA).
-
 pub mod state;
 pub mod subset;
 

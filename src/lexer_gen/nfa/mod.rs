@@ -1,5 +1,3 @@
-//! Representacao e construcao de AFN (NFA).
-
 pub mod state;
 pub mod thompson;
 

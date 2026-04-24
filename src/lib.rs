@@ -1,10 +1,3 @@
-//! Biblioteca principal do projeto.
-//!
-//! Neste momento, o foco da arquitetura e' o scanner gerado a partir de REs.
-//! A API publica exporta:
-//! - tipos de token e erro lexico
-//! - tipos e parser de expressao regular usados pelo gerador lexico
-
 pub mod lexer_gen;
 pub mod pipeline;
 pub mod scanner;
