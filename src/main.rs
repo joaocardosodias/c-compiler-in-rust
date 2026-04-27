@@ -1,4 +1,5 @@
 use c_compiler_in_rust::generate_scanner_artifacts;
+use c_compiler_in_rust::parse_program;
 use c_compiler_in_rust::scan_source;
 
 const DEFAULT_SCANNER_IMPL_PATH: &str = "src/scanner/generated/scanner_impl.rs";
@@ -61,9 +62,47 @@ fn main() {
                 }
             }
         }
+        Some("parse") => {
+            let Some(input_path) = args.next() else {
+                eprintln!("usage:\n  cargo run -- parse <input.c>");
+                std::process::exit(2);
+            };
+
+            let source = match std::fs::read_to_string(&input_path) {
+                Ok(s) => s,
+                Err(err) => {
+                    eprintln!("error reading '{}': {err}", input_path);
+                    std::process::exit(1);
+                }
+            };
+
+            let tokens = match scan_source(&source) {
+                Ok(tokens) => tokens,
+                Err(err) => {
+                    eprintln!(
+                        "lex error: {:?} at {}:{} - {}",
+                        err.kind,
+                        err.span.start.line,
+                        err.span.start.column,
+                        err.message
+                    );
+                    std::process::exit(1);
+                }
+            };
+
+            match parse_program(&tokens) {
+                Ok(ast) => {
+                    println!("{:#?}", ast);
+                }
+                Err(err) => {
+                    eprintln!("parse error at token {}: {}", err.at, err.message);
+                    std::process::exit(1);
+                }
+            }
+        }
         _ => {
             eprintln!(
-                "usage:\n  cargo run -- generate-scanner [scanner_impl_path] [dfa_table_path]\n  cargo run -- scan <input.c>"
+                "usage:\n  cargo run -- generate-scanner [scanner_impl_path] [dfa_table_path]\n  cargo run -- scan <input.c>\n  cargo run -- parse <input.c>"
             );
             std::process::exit(2);
         }

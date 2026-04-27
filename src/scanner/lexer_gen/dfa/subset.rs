@@ -1,7 +1,7 @@
 use std::collections::{BTreeMap, BTreeSet, HashMap, VecDeque};
 
-use crate::lexer_gen::dfa::state::{Dfa, DfaState};
-use crate::lexer_gen::nfa::{Nfa, TransitionSymbol};
+use crate::scanner::lexer_gen::dfa::state::{Dfa, DfaState};
+use crate::scanner::lexer_gen::nfa::{Nfa, TransitionSymbol};
 
 pub fn build_dfa_from_nfa(nfa: &Nfa) -> Dfa {
     if nfa.states.is_empty() {
@@ -81,7 +81,7 @@ fn best_accept_rule_index(nfa: &Nfa, nfa_set: &BTreeSet<usize>) -> Option<usize>
 }
 
 fn collect_alphabet(nfa: &Nfa) -> Vec<TransitionSymbol> {
-    use crate::lexer_gen::regex::{CharClass, CharClassItem};
+    use crate::scanner::lexer_gen::regex::{CharClass, CharClassItem};
 
     let mut raw_symbols: Vec<TransitionSymbol> = Vec::new();
     let mut seen: BTreeSet<String> = BTreeSet::new();
@@ -177,9 +177,9 @@ fn key_from_set(set: &BTreeSet<usize>) -> Vec<usize> {
 
 #[cfg(test)]
 mod tests {
-    use crate::lexer_gen::dfa::build_dfa_from_nfa;
-    use crate::lexer_gen::nfa::build_nfa_from_unified_spec;
-    use crate::pipeline::build_unified_regex_spec;
+    use crate::scanner::lexer_gen::dfa::build_dfa_from_nfa;
+    use crate::scanner::lexer_gen::nfa::build_nfa_from_unified_spec;
+    use crate::scanner::pipeline::build_unified_regex_spec;
 
     #[test]
     fn subset_construction_creates_start_state() {

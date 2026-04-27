@@ -1,9 +1,9 @@
 use std::fmt::Write as _;
 use std::path::Path;
 
-use crate::lexer_gen::dfa::Dfa;
-use crate::lexer_gen::nfa::TransitionSymbol;
-use crate::pipeline::UnifiedRegexSpec;
+use crate::scanner::lexer_gen::dfa::Dfa;
+use crate::scanner::lexer_gen::nfa::TransitionSymbol;
+use crate::scanner::pipeline::UnifiedRegexSpec;
 use crate::scanner::RuleKind;
 
 pub fn generate_rust_match_scanner(dfa: &Dfa, spec: &UnifiedRegexSpec) -> Result<String, String> {
@@ -162,10 +162,10 @@ fn symbol_predicate(symbol: &TransitionSymbol) -> String {
             let mut item_preds = Vec::<String>::new();
             for item in &class.items {
                 match item {
-                    crate::lexer_gen::regex::CharClassItem::Char(ch) => {
+                    crate::scanner::lexer_gen::regex::CharClassItem::Char(ch) => {
                         item_preds.push(format!("ch == {}", char_literal(*ch)));
                     }
-                    crate::lexer_gen::regex::CharClassItem::Range(start, end) => {
+                    crate::scanner::lexer_gen::regex::CharClassItem::Range(start, end) => {
                         item_preds.push(format!(
                             "({}..={}).contains(&ch)",
                             char_literal(*start),
@@ -205,11 +205,11 @@ fn char_literal(ch: char) -> String {
 
 #[cfg(test)]
 mod tests {
-    use crate::lexer_gen::codegen::generate_rust_match_scanner;
-    use crate::lexer_gen::dfa::build_dfa_from_nfa;
-    use crate::lexer_gen::minimize::minimize_dfa_hopcroft;
-    use crate::lexer_gen::nfa::build_nfa_from_unified_spec;
-    use crate::pipeline::build_unified_regex_spec;
+    use crate::scanner::lexer_gen::codegen::generate_rust_match_scanner;
+    use crate::scanner::lexer_gen::dfa::build_dfa_from_nfa;
+    use crate::scanner::lexer_gen::minimize::minimize_dfa_hopcroft;
+    use crate::scanner::lexer_gen::nfa::build_nfa_from_unified_spec;
+    use crate::scanner::pipeline::build_unified_regex_spec;
 
     #[test]
     fn generates_match_based_scanner_source() {

@@ -1,6 +1,6 @@
-use crate::lexer_gen::nfa::state::{Nfa, TransitionSymbol};
-use crate::lexer_gen::regex::Regex;
-use crate::pipeline::UnifiedRegexSpec;
+use crate::scanner::lexer_gen::nfa::state::{Nfa, TransitionSymbol};
+use crate::scanner::lexer_gen::regex::Regex;
+use crate::scanner::pipeline::UnifiedRegexSpec;
 
 #[derive(Debug, Clone, Copy)]
 struct Fragment {
@@ -142,7 +142,7 @@ fn build_fragment(nfa: &mut Nfa, regex: &Regex) -> Fragment {
 
 #[cfg(test)]
 mod tests {
-    use crate::pipeline::build_unified_regex_spec;
+    use crate::scanner::pipeline::build_unified_regex_spec;
 
     use super::build_nfa_from_unified_spec;
 

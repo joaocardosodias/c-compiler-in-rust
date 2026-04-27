@@ -1,7 +1,7 @@
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 
-use crate::lexer_gen::dfa::{Dfa, DfaState};
-use crate::lexer_gen::nfa::TransitionSymbol;
+use crate::scanner::lexer_gen::dfa::{Dfa, DfaState};
+use crate::scanner::lexer_gen::nfa::TransitionSymbol;
 
 pub fn minimize_dfa_hopcroft(dfa: &Dfa) -> Dfa {
     if dfa.states.len() <= 1 {
@@ -184,10 +184,10 @@ impl SymbolKey {
 
 #[cfg(test)]
 mod tests {
-    use crate::lexer_gen::dfa::{Dfa, DfaState, build_dfa_from_nfa};
-    use crate::lexer_gen::minimize::minimize_dfa_hopcroft;
-    use crate::lexer_gen::nfa::{TransitionSymbol, build_nfa_from_unified_spec};
-    use crate::pipeline::build_unified_regex_spec;
+    use crate::scanner::lexer_gen::dfa::{Dfa, DfaState, build_dfa_from_nfa};
+    use crate::scanner::lexer_gen::minimize::minimize_dfa_hopcroft;
+    use crate::scanner::lexer_gen::nfa::{TransitionSymbol, build_nfa_from_unified_spec};
+    use crate::scanner::pipeline::build_unified_regex_spec;
 
     #[test]
     fn minimization_is_non_increasing() {

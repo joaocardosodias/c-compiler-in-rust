@@ -1,10 +1,10 @@
 use std::path::Path;
 
-use crate::lexer_gen::codegen::{generate_dfa_table_module, write_generated_scanner_to};
-use crate::lexer_gen::dfa::build_dfa_from_nfa;
-use crate::lexer_gen::minimize::minimize_dfa_hopcroft;
-use crate::lexer_gen::nfa::build_nfa_from_unified_spec;
-use crate::lexer_gen::regex::Regex;
+use crate::scanner::lexer_gen::codegen::{generate_dfa_table_module, write_generated_scanner_to};
+use crate::scanner::lexer_gen::dfa::build_dfa_from_nfa;
+use crate::scanner::lexer_gen::minimize::minimize_dfa_hopcroft;
+use crate::scanner::lexer_gen::nfa::build_nfa_from_unified_spec;
+use crate::scanner::lexer_gen::regex::Regex;
 use crate::scanner::{RegexRule, RuleKind, parsed_regex_rules};
 
 #[derive(Debug, Clone)]
@@ -97,7 +97,7 @@ pub fn generate_scanner_artifacts(
 #[cfg(test)]
 mod tests {
     use super::{build_unified_regex_spec, generate_scanner_artifacts};
-    use crate::lexer_gen::regex::Regex;
+    use crate::scanner::lexer_gen::regex::Regex;
 
     fn unique_path(filename: &str) -> std::path::PathBuf {
         let mut p = std::env::temp_dir();

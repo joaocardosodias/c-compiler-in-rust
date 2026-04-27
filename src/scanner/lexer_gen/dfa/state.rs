@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::lexer_gen::nfa::TransitionSymbol;
+use crate::scanner::lexer_gen::nfa::TransitionSymbol;
 
 #[derive(Debug, Clone, Default)]
 pub struct Dfa {

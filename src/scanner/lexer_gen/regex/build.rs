@@ -271,7 +271,7 @@ impl Parser {
 #[cfg(test)]
 mod tests {
     use super::parse_regex;
-    use crate::lexer_gen::regex::ast::{CharClassItem, Regex};
+    use crate::scanner::lexer_gen::regex::ast::{CharClassItem, Regex};
 
     #[test]
     fn parses_alternation_concat_and_postfix() {

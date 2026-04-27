@@ -16,8 +16,6 @@ pub fn scan_source(source: &str) -> Result<Vec<Token>, LexError> {
 
         let mut state = 0usize;
 
-        let mut cursor = offset;
-
         let mut cursor_line = line;
         let mut cursor_column = column;
 
@@ -32,7 +30,7 @@ pub fn scan_source(source: &str) -> Result<Vec<Token>, LexError> {
 
             state = next_state;
 
-            cursor = offset + rel + ch.len_utf8();
+            let cursor = offset + rel + ch.len_utf8();
 
             if ch == '\n' {
                 cursor_line += 1;

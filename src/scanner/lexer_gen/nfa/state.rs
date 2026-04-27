@@ -1,4 +1,4 @@
-use crate::lexer_gen::regex::CharClass;
+use crate::scanner::lexer_gen::regex::CharClass;
 
 #[derive(Debug, Clone)]
 pub struct Nfa {

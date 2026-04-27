@@ -1,6 +1,6 @@
 use crate::TokenKind;
 
-use crate::lexer_gen::regex::{Regex, parse_regex};
+use crate::scanner::lexer_gen::regex::{Regex, parse_regex};
 
 use crate::scanner::spec::tokens::RuleKind;
 

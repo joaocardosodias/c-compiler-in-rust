@@ -53,6 +53,12 @@ Existe um comando de teste rapido para tokenizar um `.c`:
 cargo run -- scan examples/sample.c
 ```
 
+Para testar parser (scanner + parser + dump da AST):
+
+```bash
+cargo run -- parse examples/sample.c
+```
+
 Arquivo de exemplo:
 
 - `examples/sample.c`
