@@ -1,0 +1,23 @@
+#[derive(Debug, Clone, PartialEq)]
+pub enum TokenKind {
+    LParen,
+    RParen,
+    LBrace,
+    RBrace,
+    Int,
+    Return,
+    If,
+    Else,
+    While,
+    For,
+    Identifier(String),
+    Integer(i32),
+    Semicolon,
+    EOF,
+    Invalid(String),
+    Plus,
+    Minus,
+    Star,
+    Slash,
+    Equal,
+}
