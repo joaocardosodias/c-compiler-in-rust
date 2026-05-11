@@ -20,4 +20,8 @@ pub enum TokenKind {
     Star,
     Slash,
     Equal,
+    Less,
+    Greater,
+    LessEqual,
+    GreaterEqual,
 }

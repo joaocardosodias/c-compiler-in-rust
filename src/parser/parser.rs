@@ -1,4 +1,4 @@
-use crate::lexer::token_kind::TokenKind;
+use crate::lexer::token_kind::{self, TokenKind};
 use crate::parser::ast::*;
 
 pub struct Parser {
@@ -79,7 +79,7 @@ impl Parser {
             },
             TokenKind::For=>{
                 let mut block: Vec<Stmt> = Vec::new();
-                self.expect(TokenKind::LBrace);
+                self.expect(TokenKind::LParen);
                 let init=self.parse_statement();
                 let condition=self.parser_expression(0);
                 self.expect(TokenKind::Semicolon);
@@ -109,7 +109,7 @@ impl Parser {
         self.expect(TokenKind::LParen);
         self.expect(TokenKind::RParen);
         self.expect(TokenKind::LBrace);
-q
+
         while self.peek() != TokenKind::RBrace {
             let statement = self.parse_statement();
             body.push(statement);
@@ -134,6 +134,7 @@ q
         match token {
             TokenKind::Plus | TokenKind::Minus => 10,
             TokenKind::Star | TokenKind::Slash => 20,
+            TokenKind::Less | TokenKind::LessEqual | TokenKind::GreaterEqual | TokenKind::Greater =>5,
             _ => 0,
         }
     }
@@ -151,6 +152,10 @@ q
                 TokenKind::Minus => BinaryOp::Subtract,
                 TokenKind::Star => BinaryOp::Multiply,
                 TokenKind::Slash => BinaryOp::Divide,
+                TokenKind::Less=>BinaryOp::LessThan,
+                TokenKind::LessEqual=>BinaryOp::LessThanOrEqual,
+                TokenKind::Greater=>BinaryOp::GreaterThan,
+                TokenKind::GreaterEqual=>BinaryOp::GreaterThanOrEqual,
                 _ => unreachable!(),
             };
             let right = self.parser_expression(prec);
@@ -274,4 +279,53 @@ mod tests {
 
         assert_eq!(statement, expected_ast);
     }
-}
+     #[test]
+    fn test_parse_for_loop() {
+        // Simulando o código real: for (int i = 0; i < 10; i + 1) { return i; }
+        let tokens = vec![
+            TokenKind::For,
+            TokenKind::LParen,
+            
+            // Init: int i = 0;
+            TokenKind::Int, TokenKind::Identifier("i".to_string()), TokenKind::Equal, TokenKind::Integer(0), TokenKind::Semicolon,
+            
+            // Condition: i < 10; (Olha o Less aí!)
+            TokenKind::Identifier("i".to_string()), TokenKind::Less, TokenKind::Integer(10), TokenKind::Semicolon,
+            
+            // Post: i + 1
+            TokenKind::Identifier("i".to_string()), TokenKind::Plus, TokenKind::Integer(1),
+            TokenKind::RParen,
+            
+            // Body: { return i; }
+            TokenKind::LBrace,
+            TokenKind::Return, TokenKind::Identifier("i".to_string()), TokenKind::Semicolon,
+            TokenKind::RBrace,
+            
+            TokenKind::EOF,
+        ];
+        
+        let mut parser = Parser::new(tokens);
+        let statement = parser.parse_statement();
+        // A árvore gigante que esperamos que o parser construa:
+        let expected_ast = Stmt::For {
+            init: Box::new(Stmt::VarDecl("i".to_string(), Expr::IntLiteral(0))),
+            
+            // NOVO: Nossa condição agora é uma árvore binária de (i < 10)
+            condition: Expr::BinOp(
+                BinaryOp::LessThan,
+                Box::new(Expr::Variable("i".to_string())),
+                Box::new(Expr::IntLiteral(10))
+            ),
+            
+            post: Expr::BinOp(
+                BinaryOp::Add, 
+                Box::new(Expr::Variable("i".to_string())), 
+                Box::new(Expr::IntLiteral(1))
+            ),
+            
+            body: Box::new(Stmt::Block(vec![
+                Stmt::Return(Expr::Variable("i".to_string()))
+            ]))
+        };
+        assert_eq!(statement, expected_ast);
+    }}
