@@ -58,42 +58,76 @@ impl Parser {
             }
             TokenKind::While => {
                 let mut block: Vec<Stmt> = Vec::new();
-                
+
                 self.expect(TokenKind::LParen);
                 let condition = self.parser_expression(0);
                 self.expect(TokenKind::RParen);
-                
+
                 self.expect(TokenKind::LBrace);
                 while self.peek() != TokenKind::RBrace {
                     let statement = self.parse_statement();
                     block.push(statement);
                 }
                 self.expect(TokenKind::RBrace);
-                
+
                 let blocks = Stmt::Block(block);
-                
+
                 Stmt::While {
                     condition,
-                    body: Box::new(blocks)
+                    body: Box::new(blocks),
                 }
-            },
-            TokenKind::For=>{
+            }
+            TokenKind::For => {
                 let mut block: Vec<Stmt> = Vec::new();
                 self.expect(TokenKind::LParen);
-                let init=self.parse_statement();
-                let condition=self.parser_expression(0);
+                let init = self.parse_statement();
+                let condition = self.parser_expression(0);
                 self.expect(TokenKind::Semicolon);
-                let post= self.parser_expression(0);
+                let post = self.parser_expression(0);
                 self.expect(TokenKind::RParen);
                 self.expect(TokenKind::LBrace);
                 while self.peek() != TokenKind::RBrace {
                     let statement = self.parse_statement();
                     block.push(statement);
-                };
+                }
                 self.expect(TokenKind::RBrace);
-                
+
                 let blocks = Stmt::Block(block);
-                Stmt::For { init:Box::new(init), condition, post, body: Box::new(blocks) }
+                Stmt::For {
+                    init: Box::new(init),
+                    condition,
+                    post,
+                    body: Box::new(blocks),
+                }
+            }
+            TokenKind::If => {
+                let mut block: Vec<Stmt> = Vec::new();
+                let mut else_block: Vec<Stmt> = Vec::new();
+                self.expect(TokenKind::LParen);
+                let condition = self.parser_expression(0);
+                self.expect(TokenKind::RParen);
+                self.expect(TokenKind::LBrace);
+                while self.peek() != TokenKind::RBrace {
+                    let statement = self.parse_statement();
+                    block.push(statement);
+                }
+                self.expect(TokenKind::RBrace);
+                if self.peek() == TokenKind::Else {
+                    self.advance();
+                    self.expect(TokenKind::LBrace);
+                    while self.peek() != TokenKind::RBrace {
+                        let statement = self.parse_statement();
+                        else_block.push(statement);
+                    }
+                    self.expect(TokenKind::RBrace);
+                }
+                let blocks = Stmt::Block(block);
+                let else_blocks = Stmt::Block(else_block);
+                Stmt::If {
+                    condition,
+                    action: Box::new(blocks),
+                    else_block: Box::new(else_blocks),
+                }
             }
             _ => panic!("Invalid sintax"),
         }
@@ -132,9 +166,13 @@ impl Parser {
     }
     pub fn get_precedence(token: &TokenKind) -> u8 {
         match token {
+            TokenKind::LParen=>100,
             TokenKind::Plus | TokenKind::Minus => 10,
             TokenKind::Star | TokenKind::Slash => 20,
-            TokenKind::Less | TokenKind::LessEqual | TokenKind::GreaterEqual | TokenKind::Greater =>5,
+            TokenKind::Less
+            | TokenKind::LessEqual
+            | TokenKind::GreaterEqual
+            | TokenKind::Greater => 5,
             _ => 0,
         }
     }
@@ -147,15 +185,35 @@ impl Parser {
                 break;
             }
             let op_token = self.advance();
+            if op_token == TokenKind::LParen{
+                let function_name=match left{
+                    Expr::Variable(name)=>name,
+                    _=>panic!("Invalid Sintax"),
+                };
+                let mut args:Vec<Expr>=Vec::new();
+                if self.peek() !=TokenKind::RParen{
+                    loop{
+                        args.push(self.parser_expression(0));
+                        if self.peek() == TokenKind::Comma{
+                            self.advance();
+                        }
+                        else{break};
+                    }
+                    
+                }
+                self.expect(TokenKind::RParen);
+                left = Expr::Call { name: function_name, args };
+                continue;
+            }
             let op = match op_token {
                 TokenKind::Plus => BinaryOp::Add,
                 TokenKind::Minus => BinaryOp::Subtract,
                 TokenKind::Star => BinaryOp::Multiply,
                 TokenKind::Slash => BinaryOp::Divide,
-                TokenKind::Less=>BinaryOp::LessThan,
-                TokenKind::LessEqual=>BinaryOp::LessThanOrEqual,
-                TokenKind::Greater=>BinaryOp::GreaterThan,
-                TokenKind::GreaterEqual=>BinaryOp::GreaterThanOrEqual,
+                TokenKind::Less => BinaryOp::LessThan,
+                TokenKind::LessEqual => BinaryOp::LessThanOrEqual,
+                TokenKind::Greater => BinaryOp::GreaterThan,
+                TokenKind::GreaterEqual => BinaryOp::GreaterThanOrEqual,
                 _ => unreachable!(),
             };
             let right = self.parser_expression(prec);
@@ -272,60 +330,152 @@ mod tests {
 
         let expected_ast = Stmt::While {
             condition: Expr::Variable("x".to_string()),
-            body: Box::new(Stmt::Block(vec![
-                Stmt::Return(Expr::IntLiteral(42))
-            ]))
+            body: Box::new(Stmt::Block(vec![Stmt::Return(Expr::IntLiteral(42))])),
         };
 
         assert_eq!(statement, expected_ast);
     }
-     #[test]
+    #[test]
     fn test_parse_for_loop() {
-        // Simulando o código real: for (int i = 0; i < 10; i + 1) { return i; }
         let tokens = vec![
             TokenKind::For,
             TokenKind::LParen,
-            
-            // Init: int i = 0;
-            TokenKind::Int, TokenKind::Identifier("i".to_string()), TokenKind::Equal, TokenKind::Integer(0), TokenKind::Semicolon,
-            
-            // Condition: i < 10; (Olha o Less aí!)
-            TokenKind::Identifier("i".to_string()), TokenKind::Less, TokenKind::Integer(10), TokenKind::Semicolon,
-            
-            // Post: i + 1
-            TokenKind::Identifier("i".to_string()), TokenKind::Plus, TokenKind::Integer(1),
+            TokenKind::Int,
+            TokenKind::Identifier("i".to_string()),
+            TokenKind::Equal,
+            TokenKind::Integer(0),
+            TokenKind::Semicolon,
+            TokenKind::Identifier("i".to_string()),
+            TokenKind::Less,
+            TokenKind::Integer(10),
+            TokenKind::Semicolon,
+            TokenKind::Identifier("i".to_string()),
+            TokenKind::Plus,
+            TokenKind::Integer(1),
             TokenKind::RParen,
-            
-            // Body: { return i; }
             TokenKind::LBrace,
-            TokenKind::Return, TokenKind::Identifier("i".to_string()), TokenKind::Semicolon,
+            TokenKind::Return,
+            TokenKind::Identifier("i".to_string()),
+            TokenKind::Semicolon,
             TokenKind::RBrace,
+            TokenKind::EOF,
+        ];
+
+        let mut parser = Parser::new(tokens);
+        let statement = parser.parse_statement();
+
+        let expected_ast = Stmt::For {
+            init: Box::new(Stmt::VarDecl("i".to_string(), Expr::IntLiteral(0))),
+
+            condition: Expr::BinOp(
+                BinaryOp::LessThan,
+                Box::new(Expr::Variable("i".to_string())),
+                Box::new(Expr::IntLiteral(10)),
+            ),
+
+            post: Expr::BinOp(
+                BinaryOp::Add,
+                Box::new(Expr::Variable("i".to_string())),
+                Box::new(Expr::IntLiteral(1)),
+            ),
+
+            body: Box::new(Stmt::Block(vec![Stmt::Return(Expr::Variable(
+                "i".to_string(),
+            ))])),
+        };
+        assert_eq!(statement, expected_ast);
+    }
+    #[test]
+    fn test_parse_if_statement() {
+        let tokens = vec![
+            TokenKind::If,
+            TokenKind::LParen,
+            TokenKind::Identifier("x".to_string()),
+            TokenKind::Less,
+            TokenKind::Integer(10),
+            TokenKind::RParen,
+            TokenKind::LBrace,
+            TokenKind::Return,
+            TokenKind::Integer(1),
+            TokenKind::Semicolon,
+            TokenKind::RBrace,
+            TokenKind::EOF,
+        ];
+        let mut parser = Parser::new(tokens);
+        let statement = parser.parse_statement();
+        let expected_ast = Stmt::If {
+            condition: Expr::BinOp(
+                BinaryOp::LessThan,
+                Box::new(Expr::Variable("x".to_string())),
+                Box::new(Expr::IntLiteral(10)),
+            ),
+            action: Box::new(Stmt::Block(vec![Stmt::Return(Expr::IntLiteral(1))])),
+            else_block: Box::new(Stmt::Block(vec![])), // Sem else, bloco vazio!
+        };
+        assert_eq!(statement, expected_ast);
+    }
+    #[test]
+    fn test_parse_if_else_statement() {
+        let tokens = vec![
+            TokenKind::If,
+            TokenKind::LParen,
+            TokenKind::Identifier("x".to_string()),
+            TokenKind::RParen,
+            TokenKind::LBrace,
+            TokenKind::Return,
+            TokenKind::Integer(1),
+            TokenKind::Semicolon,
+            TokenKind::RBrace,
+            TokenKind::Else,
+            TokenKind::LBrace,
+            TokenKind::Return,
+            TokenKind::Integer(0),
+            TokenKind::Semicolon,
+            TokenKind::RBrace,
+            TokenKind::EOF,
+        ];
+        let mut parser = Parser::new(tokens);
+        let statement = parser.parse_statement();
+        let expected_ast = Stmt::If {
+            condition: Expr::Variable("x".to_string()),
+            action: Box::new(Stmt::Block(vec![Stmt::Return(Expr::IntLiteral(1))])),
+            else_block: Box::new(Stmt::Block(vec![Stmt::Return(Expr::IntLiteral(0))])),
+        };
+        assert_eq!(statement, expected_ast);
+    }
+    #[test]
+    fn test_parse_function_call() {
+        // Simulando: return soma(x, 5 * 2);
+        let tokens = vec![
+            TokenKind::Return,
+            TokenKind::Identifier("soma".to_string()),
+            TokenKind::LParen,
             
+            // Arg 1: x
+            TokenKind::Identifier("x".to_string()),
+            TokenKind::Comma,
+            
+            // Arg 2: 5 * 2
+            TokenKind::Integer(5), TokenKind::Star, TokenKind::Integer(2),
+            
+            TokenKind::RParen,
+            TokenKind::Semicolon,
             TokenKind::EOF,
         ];
         
         let mut parser = Parser::new(tokens);
         let statement = parser.parse_statement();
-        // A árvore gigante que esperamos que o parser construa:
-        let expected_ast = Stmt::For {
-            init: Box::new(Stmt::VarDecl("i".to_string(), Expr::IntLiteral(0))),
-            
-            // NOVO: Nossa condição agora é uma árvore binária de (i < 10)
-            condition: Expr::BinOp(
-                BinaryOp::LessThan,
-                Box::new(Expr::Variable("i".to_string())),
-                Box::new(Expr::IntLiteral(10))
-            ),
-            
-            post: Expr::BinOp(
-                BinaryOp::Add, 
-                Box::new(Expr::Variable("i".to_string())), 
-                Box::new(Expr::IntLiteral(1))
-            ),
-            
-            body: Box::new(Stmt::Block(vec![
-                Stmt::Return(Expr::Variable("i".to_string()))
-            ]))
-        };
+        let expected_ast = Stmt::Return(Expr::Call {
+            name: "soma".to_string(),
+            args: vec![
+                Expr::Variable("x".to_string()), // Arg 1
+                Expr::BinOp(                     // Arg 2
+                    BinaryOp::Multiply,
+                    Box::new(Expr::IntLiteral(5)),
+                    Box::new(Expr::IntLiteral(2))
+                )
+            ]
+        });
         assert_eq!(statement, expected_ast);
-    }}
+    }
+}

@@ -26,20 +26,23 @@ impl<'a> Lexer<'a> {
             Some('*') => TokenKind::Star,
             Some('/') => TokenKind::Slash,
             Some('=') => TokenKind::Equal,
-            Some('>')=>{
-                if let Some(&'=')=self.chars.peek(){
+            Some(',')=>TokenKind::Comma,
+            Some('>') => {
+                if let Some(&'=') = self.chars.peek() {
                     self.chars.next();
                     TokenKind::LessEqual
-                } 
-                else{TokenKind::Less}
-            },Some('<')=>{
-                if let Some(&'=')=self.chars.peek(){
-                    self.chars.next();
-                    TokenKind::LessEqual
-                } 
-                else{TokenKind::Less}
+                } else {
+                    TokenKind::Less
+                }
             }
-            
+            Some('<') => {
+                if let Some(&'=') = self.chars.peek() {
+                    self.chars.next();
+                    TokenKind::LessEqual
+                } else {
+                    TokenKind::Less
+                }
+            }
 
             Some(c) if c.is_alphabetic() || c == '_' => {
                 let mut text = String::new();

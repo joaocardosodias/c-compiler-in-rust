@@ -3,23 +3,31 @@ pub enum Expr {
     IntLiteral(i32),
     Variable(String),
     BinOp(BinaryOp, Box<Expr>, Box<Expr>),
+    Call{
+        name:String,
+        args:Vec<Expr>
+    }
 }
 #[derive(Debug, PartialEq)]
 pub enum Stmt {
     Return(Expr),
     VarDecl(String, Expr),
     Block(Vec<Stmt>),
-    While{
-        condition:Expr,
-        body: Box<Stmt>
+    While {
+        condition: Expr,
+        body: Box<Stmt>,
     },
-    For{
-        init:Box<Stmt>,
-        condition:Expr,
-        post:Expr,
-        body:Box<Stmt>
-    }
-
+    For {
+        init: Box<Stmt>,
+        condition: Expr,
+        post: Expr,
+        body: Box<Stmt>,
+    },
+    If {
+        condition: Expr,
+        action: Box<Stmt>,
+        else_block: Box<Stmt>,
+    },
 }
 #[derive(Debug, PartialEq)]
 pub struct FunctionDecl {
@@ -36,7 +44,7 @@ pub enum BinaryOp {
     Subtract,
     Multiply,
     Divide,
-   LessThan,
+    LessThan,
     LessThanOrEqual,
     GreaterThan,
     GreaterThanOrEqual,

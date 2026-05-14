@@ -24,4 +24,5 @@ pub enum TokenKind {
     Greater,
     LessEqual,
     GreaterEqual,
+    Comma,
 }
