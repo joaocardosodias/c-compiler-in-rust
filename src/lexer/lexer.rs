@@ -26,7 +26,7 @@ impl<'a> Lexer<'a> {
             Some('*') => TokenKind::Star,
             Some('/') => TokenKind::Slash,
             Some('=') => TokenKind::Equal,
-            Some(',')=>TokenKind::Comma,
+            Some(',') => TokenKind::Comma,
             Some('>') => {
                 if let Some(&'=') = self.chars.peek() {
                     self.chars.next();
@@ -61,6 +61,11 @@ impl<'a> Lexer<'a> {
                     "if" => TokenKind::If,
                     "else" => TokenKind::Else,
                     "for" => TokenKind::For,
+                    "void" => TokenKind::Void,
+                    "char" => TokenKind::Char,
+                    "float" => TokenKind::Float,
+                    "double" => TokenKind::Double,
+
                     _ => TokenKind::Identifier(text),
                 }
             }

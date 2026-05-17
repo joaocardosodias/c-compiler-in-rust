@@ -3,15 +3,16 @@ pub enum Expr {
     IntLiteral(i32),
     Variable(String),
     BinOp(BinaryOp, Box<Expr>, Box<Expr>),
-    Call{
-        name:String,
-        args:Vec<Expr>
-    }
+    Call { name: String, args: Vec<Expr> },
 }
 #[derive(Debug, PartialEq)]
 pub enum Stmt {
     Return(Expr),
-    VarDecl(String, Expr),
+    VarDecl {
+        name: String,
+        expr: Option<Expr>,
+        var_type: Type,
+    },
     Block(Vec<Stmt>),
     While {
         condition: Expr,
@@ -33,6 +34,7 @@ pub enum Stmt {
 pub struct FunctionDecl {
     pub name: String,
     pub body: Vec<Stmt>,
+    pub function_type: Type,
 }
 #[derive(Debug, PartialEq)]
 pub struct Program {
@@ -48,4 +50,12 @@ pub enum BinaryOp {
     LessThanOrEqual,
     GreaterThan,
     GreaterThanOrEqual,
+}
+#[derive(Debug, PartialEq)]
+pub enum Type {
+    Int,
+    Char,
+    Void,
+    Float,
+    Double,
 }
