@@ -51,7 +51,7 @@ pub enum BinaryOp {
     GreaterThan,
     GreaterThanOrEqual,
 }
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Type {
     Int,
     Char,

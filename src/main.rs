@@ -22,10 +22,10 @@ fn main() {
     });
     println!("{}", source_code);
 
-    let  mut lexer=Lexer::new(&source_code);
-    let tokens=lexer.tokenize();
-    println!("{:?}",tokens);
-    let mut parser=Parser::new(tokens);
-    let ast=parser.parse_program();
-    println!("{:#?}",ast)
+    let mut lexer = Lexer::new(&source_code);
+    let tokens = lexer.tokenize();
+    println!("{:?}", tokens);
+    let mut parser = Parser::new(tokens);
+    let ast = parser.parse_program();
+    println!("{:#?}", ast)
 }
