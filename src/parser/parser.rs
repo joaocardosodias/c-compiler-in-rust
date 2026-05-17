@@ -22,11 +22,7 @@ impl Parser {
         if self.peek() == expected {
             self.advance();
         } else {
-            panic!(
-                "Erro de sintaxe! Esperava {:?}, mas encontrou {:?}",
-                expected,
-                self.peek()
-            );
+            panic!("Invalid Sintax",);
         }
     }
     pub fn parser_primary(&mut self) -> Expr {

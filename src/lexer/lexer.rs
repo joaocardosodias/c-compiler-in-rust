@@ -86,7 +86,19 @@ impl<'a> Lexer<'a> {
             None => TokenKind::EOF,
         }
     }
-
+    pub fn tokenize(&mut self)->Vec<TokenKind>{
+        let  mut tokens=Vec::new();
+        loop{
+            let token=self.next_token();
+            
+            if token ==TokenKind::EOF{
+                tokens.push(token);
+                break;
+            }
+            tokens.push(token)
+        }
+        tokens
+    }
     pub fn skip_whitespace(&mut self) {
         while let Some(&c) = self.chars.peek() {
             if c == ' ' || c == '\t' || c == '\r' {
