@@ -8,7 +8,8 @@ pub mod semantic;
 
 use crate::lexer::lexer::Lexer;
 use crate::parser::parser::Parser;
-
+use crate::semantic::analyzer;
+use crate::semantic::analyzer::SemanticAnalyzer;
 fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() < 2 {
@@ -27,5 +28,13 @@ fn main() {
     println!("{:?}", tokens);
     let mut parser = Parser::new(tokens);
     let ast = parser.parse_program();
-    println!("{:#?}", ast)
+    println!("{:#?}", ast);
+    let mut analyzer = SemanticAnalyzer::new();
+    match analyzer.analyzer_program(&ast) {
+        Ok(()) => println!("Sucess"),
+        Err(_) => {
+            eprintln!("shit");
+            process::exit(1);
+        }
+    }
 }

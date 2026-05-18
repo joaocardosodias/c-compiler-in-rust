@@ -1,13 +1,15 @@
-use crate::parser::ast::{Expr, FunctionDecl, Program, Stmt};
-use crate::semantic::symbol_table::{self, SymbolInfo, SymbolTable};
+use crate::parser::ast::{Expr, FunctionDecl, Program, Stmt, Type};
+use crate::semantic::symbol_table::{SymbolInfo, SymbolTable};
 
 pub struct SemanticAnalyzer {
     symbol_table: SymbolTable,
+    current_return_type: Type,
 }
 impl SemanticAnalyzer {
     pub fn new() -> Self {
         Self {
             symbol_table: SymbolTable::new(),
+            current_return_type: Type::Void,
         }
     }
 
@@ -18,11 +20,13 @@ impl SemanticAnalyzer {
         Ok(())
     }
     fn analyze_function(&mut self, func: &FunctionDecl) -> Result<(), String> {
+        self.current_return_type = func.function_type;
         self.symbol_table.enter_scope();
         for stmt in &func.body {
             self.analyze_stmt(stmt)?
         }
         self.symbol_table.exit_scope();
+        self.current_return_type = Type::Void;
         Ok(())
     }
     fn analyze_stmt(&mut self, stmt: &Stmt) -> Result<(), String> {
@@ -33,14 +37,19 @@ impl SemanticAnalyzer {
                 var_type,
             } => {
                 if let Some(expression) = expr {
-                    self.analyze_expr(expression)?
+                    let expr_type = self.analyze_expr(expression)?;
+                    if expr_type != *var_type {
+                        return Err("Invalid types".to_string());
+                    }
                 };
+
                 let info = SymbolInfo {
                     var_type: var_type.clone(),
                 };
                 self.symbol_table.declare(name.clone(), info)?;
                 Ok(())
             }
+
             Stmt::Block(stmts) => {
                 self.symbol_table.enter_scope();
                 for stmt in stmts {
@@ -50,7 +59,10 @@ impl SemanticAnalyzer {
                 Ok(())
             }
             Stmt::Return(expr) => {
-                self.analyze_expr(expr)?;
+                let expr_type = self.analyze_expr(expr)?;
+                if self.current_return_type != expr_type {
+                    return Err("Invalid types".to_string());
+                }
                 Ok(())
             }
             Stmt::If {
@@ -81,26 +93,29 @@ impl SemanticAnalyzer {
                 Ok(())
             }
             _ => Err("Invalid commnand".to_string()),
-        };
-        Ok(())
+        }
     }
-    fn analyze_expr(&mut self, expr: &Expr) -> Result<(), String> {
+    fn analyze_expr(&mut self, expr: &Expr) -> Result<Type, String> {
         match expr {
-            Expr::IntLiteral(_) => Ok(()),
+            Expr::IntLiteral(_) => Ok(Type::Int),
             Expr::Variable(name) => match self.symbol_table.lookup(name) {
-                Some(_) => Ok(()),
+                Some(var_type) => Ok(var_type.var_type),
                 None => Err(format!("Error:Undeclared variable {}", name)),
             },
             Expr::BinOp(_, left, right) => {
-                self.analyze_expr(left)?;
-                self.analyze_expr(right)?;
-                Ok(())
+                let type_left = self.analyze_expr(left)?;
+                let type_right = self.analyze_expr(right)?;
+                if type_left == type_right {
+                    Ok(type_left)
+                } else {
+                    Err("Invalid types".to_string())
+                }
             }
             Expr::Call { name, args } => {
                 for arg in args {
                     self.analyze_expr(arg)?;
                 }
-                Ok(())
+                Ok(Type::Void)
             }
         }
     }
