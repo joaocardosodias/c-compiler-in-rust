@@ -2,10 +2,12 @@ use std::env;
 use std::fs;
 use std::process;
 
+pub mod ir;
 pub mod lexer;
 pub mod parser;
 pub mod semantic;
 
+use crate::ir::lowering::Lowering;
 use crate::lexer::lexer::Lexer;
 use crate::parser::parser::Parser;
 use crate::semantic::analyzer;
@@ -35,6 +37,15 @@ fn main() {
         Err(_) => {
             eprintln!("shit");
             process::exit(1);
+        }
+    };
+    let mut lowering = Lowering::new();
+    let iloc_program = lowering.lower_program(&ast);
+   
+    for func in &iloc_program.functions {
+        println!("Função: {}", func.name);
+        for inst in &func.instructions {
+            println!("{:?}", inst);
         }
     }
 }

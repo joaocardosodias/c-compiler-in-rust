@@ -1,6 +1,9 @@
 #[derive(Debug, PartialEq)]
 pub enum Expr {
     IntLiteral(i32),
+    FloatLiteral(f32),
+    DoubleLiteral(f64),
+
     Variable(String),
     BinOp(BinaryOp, Box<Expr>, Box<Expr>),
     Call { name: String, args: Vec<Expr> },

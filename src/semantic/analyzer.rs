@@ -98,6 +98,8 @@ impl SemanticAnalyzer {
     fn analyze_expr(&mut self, expr: &Expr) -> Result<Type, String> {
         match expr {
             Expr::IntLiteral(_) => Ok(Type::Int),
+            Expr::FloatLiteral(_) => Ok(Type::Float),
+            Expr::DoubleLiteral(_) => Ok(Type::Double),
             Expr::Variable(name) => match self.symbol_table.lookup(name) {
                 Some(var_type) => Ok(var_type.var_type),
                 None => Err(format!("Error:Undeclared variable {}", name)),
