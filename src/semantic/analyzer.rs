@@ -92,6 +92,17 @@ impl SemanticAnalyzer {
                 self.analyze_stmt(body)?;
                 Ok(())
             }
+            Stmt::Assign { name, expr } => {
+                let expr_type = self.analyze_expr(expr)?;
+                let var_type = match self.symbol_table.lookup(name) {
+                    Some(info) => info.var_type,
+                    None => return Err(format!("Error:Undeclared variable {}", name)),
+                };
+                if expr_type != var_type {
+                    return Err("Invalid types".to_string());
+                }
+                Ok(())
+            }
             _ => Err("Invalid commnand".to_string()),
         }
     }

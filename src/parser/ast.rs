@@ -3,7 +3,6 @@ pub enum Expr {
     IntLiteral(i32),
     FloatLiteral(f32),
     DoubleLiteral(f64),
-
     Variable(String),
     BinOp(BinaryOp, Box<Expr>, Box<Expr>),
     Call { name: String, args: Vec<Expr> },
@@ -31,6 +30,10 @@ pub enum Stmt {
         condition: Expr,
         action: Box<Stmt>,
         else_block: Box<Stmt>,
+    },
+    Assign {
+        name: String,
+        expr: Expr,
     },
 }
 #[derive(Debug, PartialEq)]

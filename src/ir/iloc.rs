@@ -44,6 +44,22 @@ pub enum IlocInstruction {
         src2: usize,
         dest: usize,
     },
+    CmpLET{
+        src1: usize,
+        src2: usize,
+        dest: usize,
+
+    },
+    CmpGT{
+        src1: usize,
+        src2: usize,
+        dest: usize,
+    },
+    CmpGET{
+        src1: usize,
+        src2: usize,
+        dest: usize,
+    },
 
     Jump {
         target: String,
@@ -61,6 +77,9 @@ pub enum IlocInstruction {
     },
     Ret {
         value: Option<usize>,
+    },
+    Label {
+        name: String,
     },
 }
 #[derive(Debug, Clone)]

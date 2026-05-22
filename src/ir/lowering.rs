@@ -19,6 +19,11 @@ impl Lowering {
         self.next_reg += 1;
         r
     }
+    fn get_new_label(&mut self) -> String {
+        let label = format!("L{}", self.next_label);
+        self.next_label += 1;
+        label
+    }
     pub fn lower_program(&mut self, program: &Program) -> ProgramIR {
         let mut functions = Vec::new();
         for func in &program.functions {
@@ -57,6 +62,86 @@ impl Lowering {
                 self.instructions.push(IlocInstruction::Ret {
                     value: Some(reg_val),
                 })
+            }
+            Stmt::If {
+                condition,
+                action,
+                else_block,
+            } => {
+                let r_cond = self.lower_expr(condition);
+                let l_true = self.get_new_label();
+                let l_false = self.get_new_label();
+                let l_end = self.get_new_label();
+                self.instructions.push(IlocInstruction::CJump {
+                    cond: r_cond,
+                    true_label: l_true.clone(),
+                    false_label: l_false.clone(),
+                });
+                self.instructions
+                    .push(IlocInstruction::Label { name: l_true });
+                self.lower_stmt(action);
+                self.instructions.push(IlocInstruction::Jump {
+                    target: l_end.clone(),
+                });
+                self.instructions
+                    .push(IlocInstruction::Label { name: l_false });
+                self.lower_stmt(else_block);
+                self.instructions
+                    .push(IlocInstruction::Label { name: l_end });
+            }
+            Stmt::While { condition, body } => {
+                let l_start = self.get_new_label();
+                let l_body = self.get_new_label();
+                let l_end = self.get_new_label();
+                self.instructions.push(IlocInstruction::Label {
+                    name: l_start.clone(),
+                });
+                let r_cond = self.lower_expr(condition);
+                self.instructions.push(IlocInstruction::CJump {
+                    cond: r_cond,
+                    true_label: l_body.clone(),
+                    false_label: l_end.clone(),
+                });
+
+                self.instructions
+                    .push(IlocInstruction::Label { name: l_body });
+                self.lower_stmt(body);
+                self.instructions
+                    .push(IlocInstruction::Jump { target: l_start });
+
+                self.instructions
+                    .push(IlocInstruction::Label { name: l_end });
+            },
+            Stmt::For { init, condition, post, body }=>{
+                self.lower_stmt(init);
+                let r_cond=self.lower_expr(condition);
+                let l_start=self.get_new_label();
+                let l_body=self.get_new_label();
+                let l_end=self.get_new_label();
+                self.instructions.push(IlocInstruction::Label { name: l_start.clone() });
+                self.instructions.push(IlocInstruction::CJump { cond:r_cond, true_label:l_body.clone() , false_label: l_end.clone() });
+
+
+                self.instructions.push(IlocInstruction::Label { name: l_body });
+                self.lower_stmt(body);
+                self.lower_expr(post);
+                self.instructions.push(IlocInstruction::Label { name: l_start });
+
+                self.instructions.push(IlocInstruction::Label { name: l_end });
+                
+
+            }
+            Stmt::Assign { name, expr } => {
+                let reg_val = self.lower_expr(expr);
+                self.instructions.push(IlocInstruction::Store {
+                    src: reg_val,
+                    addr: name.clone(),
+                })
+            }
+            Stmt::Block(stmts) => {
+                for stmt in stmts {
+                    self.lower_stmt(stmt);
+                }
             }
             _ => panic!("Fudeu kkkk"),
         }
@@ -102,6 +187,10 @@ impl Lowering {
                         src2: r_right,
                         dest,
                     },
+                    BinaryOp::LessThan=>IlocInstruction::CmpLT { src1: r_left, src2: r_left, dest },
+                    BinaryOp::LessThanOrEqual=>IlocInstruction::CmpLET{ src1: r_left, src2: r_left, dest },
+                    BinaryOp::GreaterThan=>IlocInstruction::CmpGT { src1: r_left, src2: r_right, dest },
+                    BinaryOp::GreaterThanOrEqual=>IlocInstruction::CmpGET { src1: r_left, src2: r_left, dest },
                     _ => panic!("fudeu"),
                 };
                 self.instructions.push(instruction);

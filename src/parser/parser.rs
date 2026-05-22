@@ -119,6 +119,12 @@ impl Parser {
                     else_block: Box::new(else_blocks),
                 }
             }
+            TokenKind::Identifier(name) => {
+                self.expect(TokenKind::Equal);
+                let expr = self.parser_expression(0);
+                self.expect(TokenKind::Semicolon);
+                Stmt::Assign { name, expr }
+            }
             _ => panic!("Invalid sintax"),
         }
     }

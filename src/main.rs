@@ -41,7 +41,7 @@ fn main() {
     };
     let mut lowering = Lowering::new();
     let iloc_program = lowering.lower_program(&ast);
-   
+
     for func in &iloc_program.functions {
         println!("Função: {}", func.name);
         for inst in &func.instructions {
